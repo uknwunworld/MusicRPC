@@ -34,6 +34,11 @@ public sealed class CoverLookup
 
     public async Task<LookupResult> FindAsync(string artist, string title, string album, Settings s, SearchInfo info, CancellationToken ct)
     {
+        // Клипы и спец. версии: "Трек (Live) | presented by Spotify" -> "Трек (Live)"
+        title = Regex.Replace(title, @"\s*[|｜].*$", "").Trim();
+        album = Regex.Replace(album, @"\s*[|｜].*$", "").Trim();
+        // У клипа "альбом" равен названию клипа и ничего не говорит о релизе — не требуем его совпадения.
+        if (Norm(album).Length > 0 && Norm(album) == Norm(title)) album = "";
         string key = $"{artist}|{title}|{album}".ToLowerInvariant();
         lock (_cache)
         {
