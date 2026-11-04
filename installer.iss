@@ -14,7 +14,6 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=installer
 OutputBaseFilename=MusicRPC-Setup-{#AppVersion}
 SetupIconFile=app.ico

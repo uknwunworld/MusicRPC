@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -31,7 +31,6 @@ public sealed class UpdateService : IDisposable
     {
         _s = s;
         _http.DefaultRequestHeaders.UserAgent.ParseAdd("MusicRPC-Updater/" + Current);
-        _http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
     }
 
     /// <summary>Текущая версия программы (для проверки можно подменить MUSICRPC_FAKE_VERSION).</summary>
@@ -68,48 +67,26 @@ public sealed class UpdateService : IDisposable
         Changed?.Invoke();
         try
         {
-            using var resp = await _http.GetAsync($"https://api.github.com/repos/{Repo}/releases/latest", _cts.Token);
-            if (!resp.IsSuccessStatusCode)
+            // Основной путь — GitHub API (даёт SHA-256). Он ограничен 60 запросами/час на IP,
+            // поэтому при отказе проверяем через обычный редирект /releases/latest.
+            UpdateInfo? latest = null;
+            try { latest = await FromApiAsync(_cts.Token); } catch (OperationCanceledException) { throw; } catch { }
+            latest ??= await FromRedirectAsync(_cts.Token);
+
+            if (latest == null)
             {
                 Status = "Не удалось проверить обновления";
-                return;
             }
-            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(_cts.Token));
-            var root = doc.RootElement;
-            var tag = root.GetProperty("tag_name").GetString() ?? "";
-            if (!Version.TryParse(tag.TrimStart('v', 'V'), out var ver))
-            {
-                Status = "Не удалось определить версию релиза";
-                return;
-            }
-            if (ver <= Current)
+            else if (latest.Version <= Current)
             {
                 Available = null;
                 Status = $"Установлена последняя версия ({Current})";
-                return;
             }
-
-            string prefix = $"https://github.com/{Repo}/releases/download/";
-            foreach (var a in root.GetProperty("assets").EnumerateArray())
+            else
             {
-                var name = a.GetProperty("name").GetString() ?? "";
-                var url = a.GetProperty("browser_download_url").GetString() ?? "";
-                if (!name.StartsWith(AssetPrefix, StringComparison.OrdinalIgnoreCase) ||
-                    !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
-                    !url.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
-
-                string? sha = null;
-                if (a.TryGetProperty("digest", out var dg) && dg.GetString() is { } d &&
-                    d.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
-                    sha = d[7..];
-
-                long size = a.TryGetProperty("size", out var sz) ? sz.GetInt64() : 0;
-                var notes = root.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
-                Available = new UpdateInfo(ver, tag, url, size, sha, notes);
-                Status = $"Доступна версия {ver}";
-                return;
+                Available = latest;
+                Status = $"Доступна версия {latest.Version}";
             }
-            Status = "В релизе нет установщика";
         }
         catch (OperationCanceledException) { }
         catch
@@ -123,15 +100,81 @@ public sealed class UpdateService : IDisposable
         }
     }
 
-    /// <summary>Скачивает установщик во временную папку и проверяет SHA-256.</summary>
+    string AssetUrlPrefix => $"https://github.com/{Repo}/releases/download/";
+
+    async Task<UpdateInfo?> FromApiAsync(CancellationToken ct)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{Repo}/releases/latest");
+        req.Headers.Accept.ParseAdd("application/vnd.github+json");
+        using var resp = await _http.SendAsync(req, ct);
+        if (!resp.IsSuccessStatusCode) return null;
+        using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
+        var root = doc.RootElement;
+        var tag = root.GetProperty("tag_name").GetString() ?? "";
+        if (!Version.TryParse(tag.TrimStart('v', 'V'), out var ver)) return null;
+
+        foreach (var a in root.GetProperty("assets").EnumerateArray())
+        {
+            var name = a.GetProperty("name").GetString() ?? "";
+            var url = a.GetProperty("browser_download_url").GetString() ?? "";
+            if (!name.StartsWith(AssetPrefix, StringComparison.OrdinalIgnoreCase) ||
+                !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
+                !url.StartsWith(AssetUrlPrefix, StringComparison.OrdinalIgnoreCase)) continue;
+
+            string? sha = null;
+            if (a.TryGetProperty("digest", out var dg) && dg.GetString() is { } d &&
+                d.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
+                sha = d[7..];
+            long size = a.TryGetProperty("size", out var sz) ? sz.GetInt64() : 0;
+            var notes = root.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
+            return new UpdateInfo(ver, tag, url, size, sha, notes);
+        }
+        return null;
+    }
+
+    async Task<UpdateInfo?> FromRedirectAsync(CancellationToken ct)
+    {
+        using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+        using var c = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
+        c.DefaultRequestHeaders.UserAgent.ParseAdd("MusicRPC-Updater/" + Current);
+        using var resp = await c.GetAsync($"https://github.com/{Repo}/releases/latest", ct);
+        var loc = resp.Headers.Location?.ToString();
+        if (string.IsNullOrEmpty(loc) || !loc.Contains("/releases/tag/")) return null;
+        var tag = loc[(loc.LastIndexOf('/') + 1)..];
+        if (!Version.TryParse(tag.TrimStart('v', 'V'), out var ver)) return null;
+        var url = $"{AssetUrlPrefix}{tag}/{AssetPrefix}-{ver}.exe";
+        return new UpdateInfo(ver, tag, url, 0, null, "");
+    }
+
+    /// <summary>Скачивает установщик во временную папку и проверяет SHA-256 (если он известен).</summary>
     public async Task<string> DownloadAsync(UpdateInfo u, IProgress<double> progress, CancellationToken ct)
+    {
+        // Сеть бывает нестабильной (обрывы TLS) — пробуем несколько раз.
+        Exception? last = null;
+        for (int attempt = 1; attempt <= 5; attempt++)
+        {
+            try { return await DownloadOnceAsync(u, progress, ct); }
+            catch (Exception ex) when (!ct.IsCancellationRequested &&
+                (ex is HttpRequestException || ex is IOException || ex is TaskCanceledException))
+            {
+                last = ex;
+                progress.Report(0);
+                await Task.Delay(TimeSpan.FromSeconds(1.5 * attempt), ct);
+            }
+        }
+        throw last ?? new InvalidOperationException("Не удалось скачать обновление");
+    }
+
+    async Task<string> DownloadOnceAsync(UpdateInfo u, IProgress<double> progress, CancellationToken ct)
     {
         var dir = Path.Combine(Path.GetTempPath(), "MusicRPC-update");
         Directory.CreateDirectory(dir);
         foreach (var old in Directory.GetFiles(dir)) { try { File.Delete(old); } catch { } }
         var path = Path.Combine(dir, $"{AssetPrefix}-{u.Version}.exe");
 
-        using var resp = await _http.GetAsync(u.Url, HttpCompletionOption.ResponseHeadersRead, ct);
+        using var req = new HttpRequestMessage(HttpMethod.Get, u.Url);
+        req.Headers.Accept.ParseAdd("application/octet-stream");
+        using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
         resp.EnsureSuccessStatusCode();
         long total = resp.Content.Headers.ContentLength ?? u.Size;
 
@@ -167,9 +210,13 @@ public sealed class UpdateService : IDisposable
     /// <summary>Запускает установщик: тихо ставит поверх и сам перезапускает программу.</summary>
     public static void LaunchInstaller(string path)
     {
-        Process.Start(new ProcessStartInfo(path, "/SILENT /NORESTART /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS")
+        // Установщик запускается с задержкой в отдельном cmd: к этому моменту программа уже завершится
+        // и освободит свой mutex (иначе Inno Setup решит, что приложение запущено, и прервётся).
+        Process.Start(new ProcessStartInfo("cmd.exe",
+            $"/c ping 127.0.0.1 -n 4 >nul & \"{path}\" /SILENT /NORESTART /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS")
         {
-            UseShellExecute = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
         });
     }
 

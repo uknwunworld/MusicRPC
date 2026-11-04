@@ -137,13 +137,13 @@ public partial class MainWindow : Window
             await Task.Delay(400);
             ((App)Application.Current).ExitApp();
         }
-        catch
+        catch (Exception ex)
         {
             _installing = false;
             UpdBar.Visibility = Visibility.Collapsed;
             UpdInstall.IsEnabled = UpdLater.IsEnabled = true;
             UpdTitle.Text = "Не удалось обновиться";
-            UpdSub.Text = "Проверьте интернет и попробуйте ещё раз";
+            UpdSub.Text = "Проверьте интернет и попробуйте ещё раз (" + ex.GetType().Name + ": " + ex.Message + ")";
         }
     }
 
