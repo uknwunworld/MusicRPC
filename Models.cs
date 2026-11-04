@@ -76,6 +76,7 @@ public sealed class Settings
 
     // Приложение
     public bool LightTheme { get; set; } = false;
+    public bool AutoUpdate { get; set; } = true;
     public bool Autostart { get; set; } = false;
     public bool StartMinimized { get; set; } = false;
     public bool CloseToTray { get; set; } = true;

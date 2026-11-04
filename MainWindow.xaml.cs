@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -18,15 +20,18 @@ public partial class MainWindow : Window
     readonly Settings _s;
     readonly PresenceController _c;
     readonly DispatcherTimer _timer;
+    readonly UpdateService _u;
+    bool _bannerDismissed;
+    bool _installing;
     bool _loading = true;
     string? _imgKey;
     ImageSource? _img;
     string? _trackUrl;
     string _lastSessions = "";
 
-    public MainWindow(Settings s, PresenceController c)
+    public MainWindow(Settings s, PresenceController c, UpdateService u)
     {
-        _s = s; _c = c;
+        _s = s; _c = c; _u = u;
         InitializeComponent();
 
         SourceInitialized += (_, _) => Native.TitleBar(new WindowInteropHelper(this).Handle, !_s.LightTheme);
@@ -40,6 +45,8 @@ public partial class MainWindow : Window
         }
         _loading = false;
         Loaded += (_, _) => ShowPage(0);
+        VerText.Text = $"{UpdateService.Current} ver";
+        _u.Changed += () => Dispatcher.BeginInvoke(new Action(RefreshUpdateUi));
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _timer.Tick += (_, _) => Render();
@@ -78,6 +85,67 @@ public partial class MainWindow : Window
     }
 
     void Reconnect_Click(object sender, RoutedEventArgs e) => _c.Reconnect();
+
+    // ---------- обновления ----------
+    void RefreshUpdateUi()
+    {
+        UpdStatus.Text = _u.Status;
+        CheckBtn.IsEnabled = !_u.Checking && !_installing;
+        var info = _u.Available;
+        if (info == null || _bannerDismissed) { if (!_installing) UpdateBanner.Visibility = Visibility.Collapsed; return; }
+        UpdateBanner.Visibility = Visibility.Visible;
+        if (!_installing)
+        {
+            UpdTitle.Text = $"Доступна версия {info.Version}";
+            UpdSub.Text = $"У вас {UpdateService.Current}. Установка занимает несколько секунд, программа перезапустится сама.";
+        }
+    }
+
+    async void CheckNow_Click(object sender, RoutedEventArgs e)
+    {
+        _bannerDismissed = false;
+        await _u.CheckAsync();
+        RefreshUpdateUi();
+    }
+
+    void UpdLater_Click(object sender, RoutedEventArgs e)
+    {
+        _bannerDismissed = true;
+        UpdateBanner.Visibility = Visibility.Collapsed;
+    }
+
+    async void UpdInstall_Click(object sender, RoutedEventArgs e)
+    {
+        var info = _u.Available;
+        if (info == null || _installing) return;
+        _installing = true;
+        UpdInstall.IsEnabled = UpdLater.IsEnabled = false;
+        UpdBar.Visibility = Visibility.Visible; UpdBar.Value = 0;
+        UpdTitle.Text = $"Загружаю версию {info.Version}…";
+        UpdSub.Text = "Не закрывайте программу";
+        try
+        {
+            var progress = new Progress<double>(p =>
+            {
+                UpdBar.Value = p;
+                UpdSub.Text = $"Загружено {(int)(p * 100)}%";
+            });
+            var path = await _u.DownloadAsync(info, progress, CancellationToken.None);
+            UpdTitle.Text = "Устанавливаю…";
+            UpdSub.Text = "Программа перезапустится";
+            UpdateService.LaunchInstaller(path);
+            await Task.Delay(400);
+            ((App)Application.Current).ExitApp();
+        }
+        catch
+        {
+            _installing = false;
+            UpdBar.Visibility = Visibility.Collapsed;
+            UpdInstall.IsEnabled = UpdLater.IsEnabled = true;
+            UpdTitle.Text = "Не удалось обновиться";
+            UpdSub.Text = "Проверьте интернет и попробуйте ещё раз";
+        }
+    }
 
     void TrackLink_Click(object sender, RoutedEventArgs e) => Open(_trackUrl);
 

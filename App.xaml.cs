@@ -13,6 +13,8 @@ public partial class App : System.Windows.Application
     Mutex? _mutex;
     System.Windows.Forms.NotifyIcon? _tray;
     PresenceController? _controller;
+    UpdateService? _updater;
+    string? _notifiedVersion;
     MainWindow? _window;
     public bool Exiting { get; private set; }
 
@@ -43,7 +45,8 @@ public partial class App : System.Windows.Application
         _controller = new PresenceController(settings);
         _controller.Start();
 
-        _window = new MainWindow(settings, _controller);
+        _updater = new UpdateService(settings);
+        _window = new MainWindow(settings, _controller, _updater);
 
         _tray = new System.Windows.Forms.NotifyIcon
         {
@@ -53,6 +56,9 @@ public partial class App : System.Windows.Application
             ContextMenuStrip = BuildMenu(),
         };
         _tray.DoubleClick += (_, _) => ShowWindow();
+        _tray.BalloonTipClicked += (_, _) => ShowWindow();
+        _updater.Changed += () => Dispatcher.BeginInvoke(new Action(NotifyUpdate));
+        _updater.Start();
 
         bool minimized = e.Args.Contains("--minimized") || (settings.StartMinimized && !string.IsNullOrWhiteSpace(settings.ClientId));
         if (!minimized) ShowWindow();
@@ -78,6 +84,15 @@ public partial class App : System.Windows.Application
         return m;
     }
 
+    void NotifyUpdate()
+    {
+        var u = _updater?.Available;
+        if (u == null || _notifiedVersion == u.Tag) return;
+        _notifiedVersion = u.Tag;
+        if (_window == null || !_window.IsVisible)
+            _tray?.ShowBalloonTip(6000, "MusicRPC", $"Доступна версия {u.Version}. Откройте программу, чтобы обновиться.", System.Windows.Forms.ToolTipIcon.Info);
+    }
+
     public void ShowWindow()
     {
         if (_window == null) return;
@@ -91,6 +106,7 @@ public partial class App : System.Windows.Application
         Exiting = true;
         _tray?.Dispose();
         _controller?.Dispose();
+        _updater?.Dispose();
         _window?.Close();
         Shutdown();
     }

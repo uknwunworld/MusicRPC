@@ -1,6 +1,6 @@
 ﻿; Inno Setup script for MusicRPC
 #define AppName "MusicRPC"
-#define AppVersion "1.0.0"
+#define AppVersion "1.1.0"
 #define AppPublisher "murphydev"
 #define AppExe "MusicRPC.exe"
 
@@ -50,7 +50,7 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "{#AppName}"; Flags: dontcreatekey uninsdeletevalue
 
 [Run]
-Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{userappdata}\MusicRPC"

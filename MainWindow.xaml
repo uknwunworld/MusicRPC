@@ -8,12 +8,13 @@
     <Grid Margin="28,20,28,24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="2" Style="{StaticResource MutedText}" FontSize="11.5" Margin="0,12,0,0"
-                   HorizontalAlignment="Right" Text="1.0.0 ver"/>
+        <TextBlock x:Name="VerText" Grid.Row="3" Style="{StaticResource MutedText}" FontSize="11.5" Margin="0,12,0,0"
+                   HorizontalAlignment="Right" Text="1.1.0 ver"/>
 
         <!-- ===== Верхняя панель ===== -->
         <Grid Margin="0,0,0,22">
@@ -50,8 +51,29 @@
             </Border>
         </Grid>
 
+        <!-- ===== Баннер обновления ===== -->
+        <Border x:Name="UpdateBanner" Grid.Row="1" Visibility="Collapsed" Margin="0,0,0,18" Padding="18,12" CornerRadius="12"
+                Background="{DynamicResource Card}" BorderBrush="{DynamicResource Accent}" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="⬆" FontSize="20" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock x:Name="UpdTitle" FontWeight="SemiBold" Text="Доступно обновление"/>
+                    <TextBlock x:Name="UpdSub" Style="{StaticResource MutedText}" Text="Новая версия готова к установке"/>
+                    <ProgressBar x:Name="UpdBar" Style="{StaticResource Bar}" Height="4" Margin="0,8,0,0" Visibility="Collapsed"/>
+                </StackPanel>
+                <Button x:Name="UpdLater" Grid.Column="2" Style="{StaticResource Btn}" Content="Позже" Margin="0,0,10,0" Click="UpdLater_Click"/>
+                <Button x:Name="UpdInstall" Grid.Column="3" Style="{StaticResource Btn}" Content="Установить и перезапустить" Click="UpdInstall_Click"/>
+            </Grid>
+        </Border>
+
         <!-- ===== Страницы ===== -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
 
             <!-- 0: Обзор -->
             <Grid x:Name="Page0">
@@ -267,6 +289,21 @@
                             <CheckBox Style="{StaticResource Switch}" Tag="CloseToTray" Margin="0">
                                 <StackPanel><TextBlock Text="Закрытие сворачивает в трей" FontWeight="SemiBold"/><TextBlock Style="{StaticResource MutedText}" Text="Выход — в меню иконки в трее"/></StackPanel>
                             </CheckBox>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource CardBox}" Margin="0,18,0,0">
+                        <StackPanel>
+                            <CheckBox Style="{StaticResource Switch}" Tag="AutoUpdate">
+                                <StackPanel><TextBlock Text="Автообновление" FontWeight="SemiBold"/><TextBlock Style="{StaticResource MutedText}" Text="Сообщать о новых версиях и ставить в один клик"/></StackPanel>
+                            </CheckBox>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="UpdStatus" Style="{StaticResource MutedText}" VerticalAlignment="Center" Text=""/>
+                                <Button x:Name="CheckBtn" Grid.Column="1" Style="{StaticResource Btn}" Content="Проверить обновления" Click="CheckNow_Click"/>
+                            </Grid>
                         </StackPanel>
                     </Border>
                 </StackPanel>
