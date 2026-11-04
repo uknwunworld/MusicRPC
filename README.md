@@ -14,7 +14,7 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 
 [**⬇ Скачать установщик**](https://github.com/uknwunworld/MusicRPC/releases/latest)
 
-<img src="docs/overview-dark.png" width="760" alt="MusicRPC — тёмная тема">
+<img src="docs/screen-overview.png" width="760" alt="MusicRPC — тёмная тема">
 
 </div>
 
@@ -35,7 +35,7 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 
 | Активность (светлая тема) | Настройки |
 |---|---|
-| <img src="docs/activity-light.png" alt="Вкладка «Активность», светлая тема"> | <img src="docs/settings-dark.png" alt="Вкладка «Настройки»"> |
+| <img src="docs/screen-activity-light.png" alt="Вкладка «Активность», светлая тема"> | <img src="docs/screen-settings.png" alt="Вкладка «Настройки»"> |
 
 ## 📦 Установка
 
