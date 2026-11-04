@@ -33,6 +33,12 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 
 ## 📸 Скриншоты
 
+**Так выглядит статус в Discord:**
+
+<p align="center"><img src="docs/screen-discord.png" width="460" alt="Статус MusicRPC в профиле Discord"></p>
+
+**Окно программы:**
+
 | Активность (светлая тема) | Настройки |
 |---|---|
 | <img src="docs/screen-activity-light.png" alt="Вкладка «Активность», светлая тема"> | <img src="docs/screen-settings.png" alt="Вкладка «Настройки»"> |
