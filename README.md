@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 <img src="app-icon.png" width="120" alt="MusicRPC logo">
 
@@ -33,9 +33,9 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 
 ## 📸 Скриншоты
 
-| Активность | Светлая тема |
+| Активность (светлая тема) | Настройки |
 |---|---|
-| <img src="docs/activity-dark.png" alt="Вкладка «Активность»"> | <img src="docs/overview-light.png" alt="Светлая тема"> |
+| <img src="docs/activity-light.png" alt="Вкладка «Активность», светлая тема"> | <img src="docs/settings-dark.png" alt="Вкладка «Настройки»"> |
 
 ## 📦 Установка
 
