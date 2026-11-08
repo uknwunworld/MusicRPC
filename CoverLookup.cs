@@ -27,9 +27,13 @@ public sealed class CoverLookup
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(3) };
     readonly Dictionary<string, LookupResult> _cache = new();
 
+    // MusicBrainz требует осмысленный User-Agent; редиректы Cover Art Archive читаем сами (нужна итоговая ссылка на картинку)
+    readonly HttpClient _mb = new(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(4) };
+
     public CoverLookup()
     {
         _http.DefaultRequestHeaders.UserAgent.ParseAdd("MusicRPC/1.0");
+        _mb.DefaultRequestHeaders.UserAgent.ParseAdd("MusicRPC/1.2 (https://github.com/uknwunworld/MusicRPC)");
     }
 
     public async Task<LookupResult> FindAsync(string artist, string title, string album, Settings s, SearchInfo info, CancellationToken ct)
@@ -109,6 +113,30 @@ public sealed class CoverLookup
         }
         for (; i < jobs.Count; i++) jobs[i].set(SearchState.NotUsed);
 
+        // Запасной источник: MusicBrainz + Cover Art Archive. Открытая база без ключей и без региональных блокировок —
+        // выручает, когда Яндекс Музыка трека не знает, а iTunes/Deezer недоступны. Спрашиваем только если обложки ещё нет.
+        if (string.IsNullOrEmpty(best?.CoverUrl))
+        {
+            try
+            {
+                using var mbCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                mbCts.CancelAfter(TimeSpan.FromSeconds(6));
+                var list = await MusicBrainz(artist, title, mbCts.Token);
+                var top = list.Where(c => c.Cover != null)
+                              .Select(c => (c, score: Score(artist, title, album, c)))
+                              .Where(x => x.score >= 0)
+                              .OrderByDescending(x => x.score)
+                              .FirstOrDefault();
+                if (top.c != null)
+                {
+                    if (best != null) best.CoverUrl = top.c.Cover;
+                    else best = new LookupResult { CoverUrl = top.c.Cover, FoundBy = "MusicBrainz" };
+                }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+            catch (Exception ex) { Diagnostics.LogThrottled("cover-MusicBrainz", ex); }
+        }
+
         var res = best ?? new LookupResult();
         ct.ThrowIfCancellationRequested();
         lock (_cache)
@@ -117,6 +145,55 @@ public sealed class CoverLookup
             _cache[key] = res;
         }
         return res;
+    }
+
+    // ---------- MusicBrainz + Cover Art Archive ----------
+    async Task<List<Cand>> MusicBrainz(string artist, string title, CancellationToken ct)
+    {
+        var res = new List<Cand>();
+        static string Q(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        var first = Regex.Split(artist, @"[,;&/]|\bfeat\.?\b|\bft\.?\b", RegexOptions.IgnoreCase)[0].Trim();
+        if (title.Length == 0 || first.Length == 0) return res;
+
+        var url = "https://musicbrainz.org/ws/2/recording/?fmt=json&limit=5&query=" +
+                  Uri.EscapeDataString($"recording:\"{Q(title)}\" AND artist:\"{Q(first)}\"");
+        using var doc = JsonDocument.Parse(await _mb.GetStringAsync(url, ct));
+        if (!doc.RootElement.TryGetProperty("recordings", out var recs)) return res;
+
+        int lookups = 0;   // обращений к Cover Art Archive не больше четырёх
+        foreach (var r in recs.EnumerateArray())
+        {
+            var rTitle = r.TryGetProperty("title", out var rt) ? rt.GetString() ?? "" : "";
+            if (Norm(rTitle) != Norm(title)) continue;
+            var artists = r.TryGetProperty("artist-credit", out var ac)
+                ? string.Join(", ", ac.EnumerateArray().Select(a => a.TryGetProperty("name", out var n) ? n.GetString() ?? "" : ""))
+                : "";
+            if (!r.TryGetProperty("releases", out var rels)) continue;
+            foreach (var rel in rels.EnumerateArray().Take(3))
+            {
+                if (lookups >= 4) return res;
+                if (!rel.TryGetProperty("id", out var idp)) continue;
+                lookups++;
+                var relTitle = rel.TryGetProperty("title", out var rlt) ? rlt.GetString() ?? "" : "";
+                var cover = await CoverArt(idp.GetString() ?? "", ct);
+                if (cover != null) res.Add(new Cand(rTitle, artists, relTitle, cover, null));
+            }
+        }
+        return res;
+    }
+
+    /// <summary>Cover Art Archive отвечает редиректом на картинку, если обложка у релиза есть (иначе 404).</summary>
+    async Task<string?> CoverArt(string releaseId, CancellationToken ct)
+    {
+        if (releaseId.Length == 0) return null;
+        using var req = new HttpRequestMessage(HttpMethod.Head, $"https://coverartarchive.org/release/{releaseId}/front-500");
+        using var resp = await _mb.SendAsync(req, ct);
+        if ((int)resp.StatusCode is >= 300 and < 400 && resp.Headers.Location is { } loc)
+        {
+            var abs = loc.IsAbsoluteUri ? loc : new Uri(new Uri("https://coverartarchive.org"), loc);
+            return abs.ToString();
+        }
+        return null;
     }
 
     // ---------- Яндекс Музыка ----------
