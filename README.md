@@ -14,7 +14,7 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 
 [**⬇ Скачать установщик**](https://github.com/uknwunworld/MusicRPC/releases/latest)
 
-<img src="docs/screen-main-dark.png" width="760" alt="MusicRPC — тёмная тема">
+<img src="docs/screen-installer.png" width="760" alt="Установщик MusicRPC">
 
 </div>
 
@@ -54,11 +54,21 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 |---|---|
 | <img src="docs/screen-discord-spotify.png" alt="Статус MusicRPC: Spotify"> | <img src="docs/screen-discord-yandex.png" alt="Статус MusicRPC: Яндекс Музыка"> |
 
-**Окно программы:**
+**Окно программы — обзор:**
 
-| Обзор (светлая тема) | Настройки |
+| Светлая тема | Тёмная тема |
 |---|---|
-| <img src="docs/screen-main-light.png" alt="Вкладка «Обзор», светлая тема"> | <img src="docs/screen-settings-light.png" alt="Вкладка «Настройки»"> |
+| <img src="docs/screen-overview-light.png" alt="Вкладка «Обзор», светлая тема"> | <img src="docs/screen-overview-dark.png" alt="Вкладка «Обзор», тёмная тема"> |
+
+**Выбор активности — что показывать в статусе:**
+
+<p align="center"><img src="docs/screen-activity-dark.png" width="760" alt="Вкладка «Активность»"></p>
+
+**Настройки:**
+
+| Тёмная тема | Светлая тема |
+|---|---|
+| <img src="docs/screen-settings-dark.png" alt="Вкладка «Настройки», тёмная тема"> | <img src="docs/screen-settings-light-2.png" alt="Вкладка «Настройки», светлая тема"> |
 
 ## 📦 Установка
 
