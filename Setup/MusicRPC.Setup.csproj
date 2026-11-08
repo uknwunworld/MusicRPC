@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Установщик MusicRPC. Собран на .NET Framework 4.8: он есть в Windows 10/11, поэтому сам установщик
+       маленький и не требует ничего ставить. Само приложение (self-contained) лежит внутри как сжатый payload. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>MusicRPC-Setup</AssemblyName>
+    <RootNamespace>MusicRPC.Setup</RootNamespace>
+    <ApplicationIcon>..\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AppVersion Condition="'$(AppVersion)' == ''">0.0.0</AppVersion>
+    <Version>$(AppVersion)</Version>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <PayloadPath Condition="'$(PayloadPath)' == ''">payload\payload.bin</PayloadPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="..\app-icon.png" Link="app-icon.png" />
+    <EmbeddedResource Include="$(PayloadPath)" LogicalName="payload.bin" Condition="Exists('$(PayloadPath)')" />
+  </ItemGroup>
+
+</Project>

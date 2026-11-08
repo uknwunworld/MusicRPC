@@ -21,6 +21,7 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Contains("--uninstall")) { Uninstaller.Run(); Shutdown(); return; }
         Diagnostics.InstallGlobalHandlers();
         DispatcherUnhandledException += (_, ev) => Diagnostics.Log("ui", ev.Exception);
 

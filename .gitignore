@@ -4,3 +4,4 @@ publish/
 installer/
 .vs/
 *.user
+Setup/payload/

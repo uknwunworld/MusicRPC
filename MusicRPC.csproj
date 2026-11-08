@@ -15,6 +15,15 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
+  <!-- Setup\ — отдельный проект установщика, в приложение он не входит -->
+  <ItemGroup>
+    <Compile Remove="Setup\**" />
+    <Page Remove="Setup\**" />
+    <ApplicationDefinition Remove="Setup\**" />
+    <EmbeddedResource Remove="Setup\**" />
+    <None Remove="Setup\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <Resource Include="app.ico" />
     <Resource Include="app-icon.png" />

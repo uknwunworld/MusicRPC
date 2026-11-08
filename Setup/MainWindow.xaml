@@ -1,0 +1,147 @@
+<Window x:Class="MusicRPC.Setup.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Установка — MusicRPC" Width="940" Height="600"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI Variable Display, Segoe UI" UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <Border x:Name="Root" Margin="20" CornerRadius="18" Background="#0F1013" BorderBrush="#25272C" BorderThickness="1"
+            MouseLeftButtonDown="Drag">
+        <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.55"/></Border.Effect>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="410"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== левая фирменная панель ===== -->
+            <Border x:Name="Brand" Grid.Column="0" CornerRadius="17,0,0,17" SizeChanged="Brand_SizeChanged">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0.6,1">
+                        <GradientStop Color="#090B0D" Offset="0"/>
+                        <GradientStop Color="#0C1712" Offset="0.55"/>
+                        <GradientStop Color="#10351F" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid>
+                    <Ellipse Width="560" Height="560" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-120,0,0">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#401ED760" Offset="0"/>
+                                <GradientStop Color="#001ED760" Offset="1"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+
+                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,70,0,0">
+                        <Border Width="132" Height="132" CornerRadius="66" HorizontalAlignment="Center">
+                            <Border.Effect><DropShadowEffect Color="#1ED760" BlurRadius="46" ShadowDepth="0" Opacity="0.45"/></Border.Effect>
+                            <Image Source="pack://application:,,,/app-icon.png" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        </Border>
+                        <TextBlock Text="MusicRPC" Foreground="White" FontSize="34" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,24,0,0"/>
+                        <TextBlock Text="Твоя музыка в статусе Discord" Foreground="#B5BAC2" FontSize="14.5" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel x:Name="Eq" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,96" Height="96"/>
+
+                    <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,34">
+                        <TextBlock Text="Spotify  ·  Яндекс Музыка  ·  SoundCloud" Foreground="#1ED760" FontSize="12.5" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ===== правая часть ===== -->
+            <Grid Grid.Column="1" Margin="46,24,30,36">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <TextBlock x:Name="VerText" Foreground="#6B6E76" FontSize="12.5" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource WinBtn}" Content="–" Click="Minimize_Click"/>
+                        <Button x:Name="CloseBtn" Style="{StaticResource WinBtn}" Content="✕" FontSize="13" Click="Close_Click"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1">
+                    <!-- Страница 1: параметры -->
+                    <StackPanel x:Name="PageInstall" VerticalAlignment="Center">
+                        <TextBlock x:Name="Eyebrow" Text="УСТАНОВКА" Style="{StaticResource Eyebrow}"/>
+                        <TextBlock Text="MusicRPC" Style="{StaticResource Title}" Margin="0,6,0,0"/>
+                        <TextBlock Style="{StaticResource Lead}" Margin="0,10,0,0"
+                                   Text="Покажет друзьям в Discord, что ты слушаешь: трек, обложку, прогресс и кнопку «Слушать в …». Выбери папку и нажми «Установить»."/>
+
+                        <Border Background="{StaticResource Card}" BorderBrush="{StaticResource CardLine}" BorderThickness="1" CornerRadius="16" Margin="0,24,0,0">
+                            <StackPanel>
+                                <Grid Margin="16,14,16,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="40" Height="40" CornerRadius="11" Background="#22242A" VerticalAlignment="Center">
+                                        <Path Data="M3,7 L3,17 Q3,19 5,19 L19,19 Q21,19 21,17 L21,9 Q21,7 19,7 L12,7 L10,4.5 L5,4.5 Q3,4.5 3,6.5 Z"
+                                              Stroke="#C9CCD3" StrokeThickness="1.5" StrokeLineJoin="Round" Stretch="Uniform" Width="18" Height="18"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="14,0,12,0" VerticalAlignment="Center">
+                                        <TextBlock Text="ПАПКА УСТАНОВКИ" Foreground="#6B6E76" FontSize="10.5" FontWeight="Bold"/>
+                                        <TextBlock x:Name="DirText" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
+                                        <TextBlock x:Name="SizeText" Foreground="#6B6E76" FontSize="12" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button x:Name="ChangeBtn" Grid.Column="2" Style="{StaticResource SmallBtn}" Content="Изменить" VerticalAlignment="Center" Click="Change_Click"/>
+                                </Grid>
+                                <Border Height="1" Background="{StaticResource CardLine}"/>
+                                <StackPanel Margin="18,16,16,18">
+                                    <CheckBox x:Name="DesktopChk" Style="{StaticResource Check}" Content="Ярлык на рабочем столе"/>
+                                    <CheckBox x:Name="AutoChk" Style="{StaticResource Check}" Content="Запускать вместе с Windows" Margin="0,14,0,0" IsChecked="True"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Button x:Name="InstallBtn" Style="{StaticResource PrimaryBtn}" Content="Установить" Margin="0,22,0,0" Click="Install_Click"/>
+                    </StackPanel>
+
+                    <!-- Страница 2: прогресс -->
+                    <StackPanel x:Name="PageProgress" VerticalAlignment="Center" Visibility="Collapsed">
+                        <TextBlock Text="УСТАНОВКА" Style="{StaticResource Eyebrow}"/>
+                        <TextBlock x:Name="ProgTitle" Text="Устанавливаю…" Style="{StaticResource Title}" Margin="0,6,0,0"/>
+                        <TextBlock x:Name="ProgText" Style="{StaticResource Lead}" Margin="0,10,0,0" Text="Подготовка…"/>
+                        <Border x:Name="Track" Height="8" CornerRadius="4" Background="#23252B" Margin="0,34,0,0">
+                            <Border x:Name="Fill" CornerRadius="4" HorizontalAlignment="Left" Width="0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#17A84B" Offset="0"/>
+                                        <GradientStop Color="#1ED760" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                        </Border>
+                        <TextBlock x:Name="ProgPercent" Foreground="#6B6E76" FontSize="12.5" Margin="0,10,0,0" Text="0%"/>
+                    </StackPanel>
+
+                    <!-- Страница 3: готово -->
+                    <StackPanel x:Name="PageDone" VerticalAlignment="Center" Visibility="Collapsed">
+                        <TextBlock Text="ГОТОВО" Style="{StaticResource Eyebrow}"/>
+                        <TextBlock Text="MusicRPC установлен" Style="{StaticResource Title}" FontSize="34" Margin="0,6,0,0"/>
+                        <TextBlock Style="{StaticResource Lead}" Margin="0,10,0,0"
+                                   Text="Включи музыку при запущенном Discord — статус появится сам. Программа живёт в трее и сама проверяет обновления."/>
+                        <Border Background="{StaticResource Card}" BorderBrush="{StaticResource CardLine}" BorderThickness="1" CornerRadius="16" Margin="0,24,0,0" Padding="18,16">
+                            <CheckBox x:Name="LaunchChk" Style="{StaticResource Check}" Content="Запустить MusicRPC" IsChecked="True"/>
+                        </Border>
+                        <Button Style="{StaticResource PrimaryBtn}" Content="Закрыть" Margin="0,22,0,0" Click="Finish_Click"/>
+                    </StackPanel>
+
+                    <!-- Страница 4: ошибка -->
+                    <StackPanel x:Name="PageError" VerticalAlignment="Center" Visibility="Collapsed">
+                        <TextBlock Text="ОШИБКА" Style="{StaticResource Eyebrow}" Foreground="#F15E6C"/>
+                        <TextBlock Text="Не удалось установить" Style="{StaticResource Title}" FontSize="32" Margin="0,6,0,0"/>
+                        <TextBlock x:Name="ErrText" Style="{StaticResource Lead}" Margin="0,10,0,0"/>
+                        <Button Style="{StaticResource PrimaryBtn}" Content="Закрыть" Margin="0,26,0,0" Click="Close_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
