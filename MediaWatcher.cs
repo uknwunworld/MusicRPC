@@ -112,6 +112,39 @@ static class Native
         return res;
     }
 
+    /// <summary>Названия всех вкладок открытых браузеров (Chromium и Firefox) через UI Automation.
+    /// В заголовке окна виден только активный сайт, а музыка может играть в фоновой вкладке.</summary>
+    public static List<string> BrowserTabTitles()
+    {
+        var res = new List<string>();
+        try
+        {
+            var root = System.Windows.Automation.AutomationElement.RootElement;
+            var walker = System.Windows.Automation.TreeWalker.ControlViewWalker;
+            foreach (var cls in new[] { "Chrome_WidgetWin_1", "MozillaWindowClass" })
+            {
+                var wins = root.FindAll(System.Windows.Automation.TreeScope.Children,
+                    new System.Windows.Automation.PropertyCondition(System.Windows.Automation.AutomationElement.ClassNameProperty, cls));
+                foreach (System.Windows.Automation.AutomationElement w in wins) Walk(walker, w, 0, res);
+            }
+        }
+        catch { }
+        return res;
+    }
+
+    static void Walk(System.Windows.Automation.TreeWalker walker, System.Windows.Automation.AutomationElement el, int depth, List<string> res)
+    {
+        if (depth > 9) return;
+        var c = walker.GetFirstChild(el);
+        while (c != null)
+        {
+            var t = c.Current.ControlType;
+            if (t == System.Windows.Automation.ControlType.TabItem) { var n = c.Current.Name; if (!string.IsNullOrEmpty(n)) res.Add(n); }
+            else if (t != System.Windows.Automation.ControlType.Document) Walk(walker, c, depth + 1, res);   // содержимое страниц не обходим
+            c = walker.GetNextSibling(c);
+        }
+    }
+
     public static void TitleBar(IntPtr hwnd, bool dark)
     {
         int on = dark ? 1 : 0;

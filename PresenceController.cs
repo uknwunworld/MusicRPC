@@ -17,6 +17,8 @@ public sealed class PresenceController : IDisposable
     readonly CoverLookup _lookup = new();
     readonly CancellationTokenSource _cts = new();
     readonly Dictionary<string, SourceKind> _sticky = new();
+    volatile List<string> _tabTitles = new();
+    DateTime _tabsAt = DateTime.MinValue;
 
     public readonly DiscordIpc Discord = new();
 
@@ -62,7 +64,13 @@ public sealed class PresenceController : IDisposable
     async Task Tick(CancellationToken ct)
     {
         var sessions = await _watcher.PollAsync();
-        var titles = sessions.Any(x => IsBrowser(x.AppId)) ? Native.WindowTitles() : new List<string>();
+        bool anyBrowser = sessions.Any(x => IsBrowser(x.AppId));
+        var titles = anyBrowser ? Native.WindowTitles() : new List<string>();
+        if (anyBrowser && (DateTime.UtcNow - _tabsAt).TotalSeconds >= 3)
+        {
+            _tabsAt = DateTime.UtcNow;
+            _ = Task.Run(() => _tabTitles = Native.BrowserTabTitles());
+        }
 
         var classified = sessions.Select(x => (s: x, kind: Classify(x, titles))).ToList();
         SessionLines = classified.Select(c =>
@@ -271,7 +279,14 @@ public sealed class PresenceController : IDisposable
         {
             var key = $"{id}|{s.Artist}|{s.Title}";
             var kind = SourceKind.OtherBrowser;
-            if (titles.Any(t => t.Contains("soundcloud", StringComparison.OrdinalIgnoreCase)))
+
+            // Точный способ: вкладка, в названии которой есть и сайт, и название играющего трека (работает и в фоновой вкладке).
+            bool Tab(params string[] sites) => !string.IsNullOrWhiteSpace(s.Title) && _tabTitles.Any(t =>
+                t.Contains(s.Title, StringComparison.OrdinalIgnoreCase) &&
+                sites.Any(site => t.Contains(site, StringComparison.OrdinalIgnoreCase)));
+            if (Tab("soundcloud")) kind = SourceKind.SoundCloud;
+            else if (Tab("Яндекс Музык", "Yandex Music", "music.yandex")) kind = SourceKind.Yandex;
+            else if (titles.Any(t => t.Contains("soundcloud", StringComparison.OrdinalIgnoreCase)))
                 kind = SourceKind.SoundCloud;
             else if (titles.Any(t => t.Contains("Яндекс Музык", StringComparison.OrdinalIgnoreCase)
                                   || t.Contains("Yandex Music", StringComparison.OrdinalIgnoreCase)
