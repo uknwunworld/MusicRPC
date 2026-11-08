@@ -14,7 +14,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock x:Name="VerText" Grid.Row="3" Style="{StaticResource MutedText}" FontSize="11.5" Margin="0,12,0,0"
-                   HorizontalAlignment="Right" Text="1.1.0 ver"/>
+                   HorizontalAlignment="Right" Text="1.2.0 ver"/>
 
         <!-- ===== Верхняя панель ===== -->
         <Grid Margin="0,0,0,22">
@@ -290,6 +290,19 @@
                                 <StackPanel><TextBlock Text="Закрытие сворачивает в трей" FontWeight="SemiBold"/><TextBlock Style="{StaticResource MutedText}" Text="Выход — в меню иконки в трее"/></StackPanel>
                             </CheckBox>
                         </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource CardBox}" Margin="0,18,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="Что-то не работает?" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="ReportStatus" Style="{StaticResource MutedText}" TextWrapping="Wrap" TextTrimming="None" Text="Отчёт соберётся сам и откроется на GitHub"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource Btn}" Content="Сообщить об ошибке" Click="Report_Click"/>
+                        </Grid>
                     </Border>
                     <Border Style="{StaticResource CardBox}" Margin="0,18,0,0">
                         <StackPanel>

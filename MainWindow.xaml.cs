@@ -86,6 +86,13 @@ public partial class MainWindow : Window
 
     void Reconnect_Click(object sender, RoutedEventArgs e) => _c.Reconnect();
 
+    void Report_Click(object sender, RoutedEventArgs e)
+    {
+        var file = Diagnostics.Report(_s, _c, _u);
+        ReportStatus.Text = "Отчёт скопирован в буфер обмена. Вставьте его (Ctrl+V) в открывшееся окно GitHub." +
+                            (file != "" ? "\nФайл: " + file : "");
+    }
+
     // ---------- обновления ----------
     void RefreshUpdateUi()
     {

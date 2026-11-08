@@ -89,8 +89,9 @@ public sealed class UpdateService : IDisposable
             }
         }
         catch (OperationCanceledException) { }
-        catch
+        catch (Exception ex)
         {
+            Diagnostics.LogThrottled("update-check", ex);
             Status = "Нет связи с GitHub";
         }
         finally

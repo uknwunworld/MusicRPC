@@ -81,7 +81,7 @@ public sealed class CoverLookup
             {
                 try { return await run(); }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
-                catch { return null; }
+                catch (Exception ex) { Diagnostics.LogThrottled("cover-" + name, ex); return null; }
             }), set));
         }
         Add("Yandex", s.SearchYandex, () => Both(q => Yandex(q, ct), q => YandexAlbum(q, ct)), st => info.Yandex = st);

@@ -21,6 +21,8 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Diagnostics.InstallGlobalHandlers();
+        DispatcherUnhandledException += (_, ev) => Diagnostics.Log("ui", ev.Exception);
 
         _mutex = new Mutex(true, "MusicRPC.SingleInstance.5F2B", out bool first);
         var showEvt = new EventWaitHandle(false, EventResetMode.AutoReset, "MusicRPC.Show.5F2B");

@@ -64,6 +64,7 @@ public sealed class DiscordIpc : IDisposable
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
             Status = "Не удалось связаться с Discord";
+            Diagnostics.LogThrottled("discord-connect", ex);
             Disconnect(keepStatus: true);
             return false;
         }
@@ -118,7 +119,7 @@ public sealed class DiscordIpc : IDisposable
             ["nonce"] = Guid.NewGuid().ToString(),
         };
         try { await SendRaw(1, payload.ToJsonString(), ct); }
-        catch { _ready = false; Status = "Discord отключился"; }
+        catch (Exception ex) { _ready = false; Status = "Discord отключился"; Diagnostics.LogThrottled("discord-send", ex); }
     }
 
     async Task SendRaw(int op, string json, CancellationToken ct)

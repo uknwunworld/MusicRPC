@@ -54,7 +54,7 @@ public sealed class PresenceController : IDisposable
         {
             try { await Tick(ct); }
             catch (OperationCanceledException) { break; }
-            catch { }
+            catch (Exception ex) { Diagnostics.LogThrottled("tick", ex); }
             try { await Task.Delay(400, ct); } catch { break; }
         }
     }
