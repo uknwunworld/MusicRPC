@@ -210,12 +210,12 @@ public sealed class PresenceController : IDisposable
             act["assets"] = new JsonObject
             {
                 ["large_image"] = n.CoverUrl,
-                ["large_text"] = Fit(string.IsNullOrWhiteSpace(n.Album) ? SourceNames.Of(n.Source) : n.Album),
+                ["large_text"] = Fit(SourceNames.CoverHint(n.Source, n.Album)),
             };
         }
         if (useBtn)
         {
-            act["buttons"] = new JsonArray(new JsonObject { ["label"] = "Открыть трек", ["url"] = n.TrackUrl });
+            act["buttons"] = new JsonArray(new JsonObject { ["label"] = SourceNames.ButtonLabel(n.Source), ["url"] = n.TrackUrl });
         }
 
         await Discord.SetActivityAsync(act, ct);

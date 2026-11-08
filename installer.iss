@@ -1,6 +1,6 @@
 ﻿; Inno Setup script for MusicRPC
 #define AppName "MusicRPC"
-#define AppVersion "1.2.1"
+#define AppVersion "1.2.2"
 #define AppPublisher "murphydev"
 #define AppExe "MusicRPC.exe"
 

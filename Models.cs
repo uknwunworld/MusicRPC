@@ -16,6 +16,23 @@ public static class SourceNames
         SourceKind.OtherBrowser => "Браузер",
         _ => "Плеер",
     };
+
+    /// <summary>Подпись кнопки в статусе Discord — своя для каждого сервиса.</summary>
+    public static string ButtonLabel(SourceKind k) => k switch
+    {
+        SourceKind.Spotify => "Слушать в Spotify",
+        SourceKind.Yandex => "Слушать в Яндекс Музыке",
+        SourceKind.SoundCloud => "Слушать в SoundCloud",
+        _ => "Открыть трек",
+    };
+
+    /// <summary>Подсказка при наведении на обложку: альбом и сервис.</summary>
+    public static string CoverHint(SourceKind k, string album)
+    {
+        bool named = k is SourceKind.Spotify or SourceKind.Yandex or SourceKind.SoundCloud;
+        if (string.IsNullOrWhiteSpace(album)) return Of(k);
+        return named ? $"{album.Trim()} · {Of(k)}" : album.Trim();
+    }
 }
 
 /// <summary>Сырая медиа-сессия из Windows (SMTC).</summary>
