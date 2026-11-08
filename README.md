@@ -52,7 +52,7 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 
 | Spotify | Яндекс Музыка |
 |---|---|
-| <img src="docs/screen-discord-spotify.png" alt="Статус MusicRPC: Spotify"> | <img src="docs/screen-discord-yandex.png" alt="Статус MusicRPC: Яндекс Музыка"> |
+| <img src="docs/screen-discord-spotify-2.png" alt="Статус MusicRPC: Spotify"> | <img src="docs/screen-discord-yandex-2.png" alt="Статус MusicRPC: Яндекс Музыка"> |
 
 **Окно программы — обзор:**
 
