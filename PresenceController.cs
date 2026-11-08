@@ -190,8 +190,14 @@ public sealed class PresenceController : IDisposable
         long nowSec = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         long start = nowSec - (long)n.Position.TotalSeconds;
         bool useCover = _s.ShowCover && !string.IsNullOrEmpty(n.CoverUrl) && n.CoverUrl!.Length <= 256;
-        bool useBtn = _s.ShowButtons && !string.IsNullOrEmpty(n.TrackUrl) && n.TrackUrl!.Length <= 512;
-        string key = $"{_version}|{n.Source}|{n.Artist}|{n.Title}|{n.Playing}|{useCover}{n.CoverUrl}|{useBtn}{n.TrackUrl}";
+        // Кнопка должна вести в тот сервис, что написан на ней. Найденная ссылка подходит только если она оттуда же,
+        // иначе — поиск трека на самом сервисе.
+        string? link = n.TrackUrl;
+        bool ownLink = n.Source == SourceKind.Yandex && n.FoundBy == "Yandex";
+        if (n.Source is SourceKind.Spotify or SourceKind.SoundCloud || (n.Source == SourceKind.Yandex && !ownLink))
+            link = SourceNames.SearchUrl(n.Source, n.Artist, n.Title) ?? link;
+        bool useBtn = _s.ShowButtons && !string.IsNullOrEmpty(link) && link!.Length <= 512;
+        string key = $"{_version}|{n.Source}|{n.Artist}|{n.Title}|{n.Playing}|{useCover}{n.CoverUrl}|{useBtn}{link}";
 
         bool drift = n.Playing && _s.ShowProgress && Math.Abs(start - _lastStart) >= 3;
         if (key == _lastSentKey && !drift) { PresenceActive = true; return; }
@@ -238,7 +244,7 @@ public sealed class PresenceController : IDisposable
         }
         if (useBtn)
         {
-            act["buttons"] = new JsonArray(new JsonObject { ["label"] = SourceNames.ButtonLabel(n.Source), ["url"] = n.TrackUrl });
+            act["buttons"] = new JsonArray(new JsonObject { ["label"] = SourceNames.ButtonLabel(n.Source), ["url"] = link });
         }
 
         await Discord.SetActivityAsync(act, ct);
@@ -274,6 +280,7 @@ public sealed class PresenceController : IDisposable
     {
         var id = s.AppId.ToLowerInvariant();
         if (id.Contains("spotify")) return SourceKind.Spotify;
+        if (id.Contains("soundcloud")) return SourceKind.SoundCloud;   // отдельное приложение или PWA
 
         if (IsBrowser(id))
         {
@@ -284,7 +291,10 @@ public sealed class PresenceController : IDisposable
             bool Tab(params string[] sites) => !string.IsNullOrWhiteSpace(s.Title) && _tabTitles.Any(t =>
                 t.Contains(s.Title, StringComparison.OrdinalIgnoreCase) &&
                 sites.Any(site => t.Contains(site, StringComparison.OrdinalIgnoreCase)));
-            if (Tab("soundcloud")) kind = SourceKind.SoundCloud;
+            // У SoundCloud заголовок страницы при воспроизведении — «Трек by Артист» (слова SoundCloud в названии вкладки нет).
+            bool ScTitle() => !string.IsNullOrWhiteSpace(s.Title) && !string.IsNullOrWhiteSpace(s.Artist) && _tabTitles.Any(t =>
+                t.Contains($"{s.Title} by {s.Artist}", StringComparison.OrdinalIgnoreCase));
+            if (Tab("soundcloud") || ScTitle()) kind = SourceKind.SoundCloud;
             else if (Tab("Яндекс Музык", "Yandex Music", "music.yandex")) kind = SourceKind.Yandex;
             else if (titles.Any(t => t.Contains("soundcloud", StringComparison.OrdinalIgnoreCase)))
                 kind = SourceKind.SoundCloud;

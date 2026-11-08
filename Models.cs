@@ -26,6 +26,19 @@ public static class SourceNames
         _ => "Открыть трек",
     };
 
+    /// <summary>Поиск трека на самом сервисе — ссылка для кнопки, когда точной ссылки нет.</summary>
+    public static string? SearchUrl(SourceKind k, string artist, string title)
+    {
+        var q = Uri.EscapeDataString($"{artist} {title}".Trim());
+        return k switch
+        {
+            SourceKind.Spotify => "https://open.spotify.com/search/" + q,
+            SourceKind.Yandex => "https://music.yandex.ru/search?text=" + q,
+            SourceKind.SoundCloud => "https://soundcloud.com/search?q=" + q,
+            _ => null,
+        };
+    }
+
     /// <summary>Логотип приложения — запасная картинка для плееров без значка сервиса.</summary>
     public const string AppIconUrl = "https://raw.githubusercontent.com/uknwunworld/MusicRPC/main/app-icon.png";
 
