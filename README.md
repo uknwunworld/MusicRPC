@@ -95,30 +95,6 @@ SoundCloud опознаётся по заголовку окна браузер�
 В ряде регионов Apple блокирует публичный поиск. Это нормально — остальные источники продолжают работать.
 </details>
 
-## 🛠 Сборка из исходников
-
-Нужен [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
-
-```bash
-git clone https://github.com/uknwunworld/MusicRPC.git
-cd MusicRPC
-dotnet run
-```
-
-Единый самодостаточный exe:
-
-```bash
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
-```
-
-Установщик собирается в [Inno Setup 6](https://jrsoftware.org/isinfo.php):
-
-```bash
-iscc installer.iss
-```
-
-> Discord Application ID зашит в коде (`Models.cs` → `Settings.DefaultClientId`). Для форка создайте своё приложение на [Discord Developer Portal](https://discord.com/developers/applications) и замените значение.
-
 ## 🧩 Как это устроено
 
 - **Захват трека** — системные медиа-сессии Windows (`GlobalSystemMediaTransportControlsSessionManager`), поэтому работает с любым плеером, который сообщает Windows о воспроизведении.
