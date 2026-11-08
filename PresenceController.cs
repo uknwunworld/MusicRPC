@@ -235,12 +235,19 @@ public sealed class PresenceController : IDisposable
         }
         else
         {
-            // обложка не найдена: без картинки Discord рисует серую заглушку «?», поэтому показываем логотип сервиса
-            act["assets"] = new JsonObject
+            // обложка не найдена: без картинки Discord рисует серую заглушку «?», поэтому вместо неё — логотип MusicRPC,
+            // а значок сервиса, как и у обычной обложки, остаётся маленьким в правом нижнем углу
+            var assets = new JsonObject
             {
-                ["large_image"] = SourceNames.BadgeUrl(n.Source) ?? SourceNames.AppIconUrl,
+                ["large_image"] = SourceNames.AppIconUrl,
                 ["large_text"] = Fit(SourceNames.CoverHint(n.Source, n.Album)),
             };
+            if (SourceNames.BadgeUrl(n.Source) is { } badge)
+            {
+                assets["small_image"] = badge;
+                assets["small_text"] = Fit(SourceNames.Of(n.Source));
+            }
+            act["assets"] = assets;
         }
         if (useBtn)
         {

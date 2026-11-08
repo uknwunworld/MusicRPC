@@ -57,8 +57,12 @@ public sealed class MediaWatcher
                 if (!_thumbs.TryGetValue(key, out var thumb))
                 {
                     thumb = await ReadThumbAsync(props.Thumbnail);
-                    if (_thumbs.Count > 30) _thumbs.Clear();
-                    _thumbs[key] = thumb;
+                    // пустой результат не запоминаем: обложка может появиться через долю секунды
+                    if (thumb != null)
+                    {
+                        if (_thumbs.Count > 30) _thumbs.Clear();
+                        _thumbs[key] = thumb;
+                    }
                 }
                 ms.Thumb = thumb;
                 list.Add(ms);

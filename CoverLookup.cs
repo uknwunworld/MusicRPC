@@ -24,11 +24,11 @@ public sealed class CoverLookup
 
     sealed record Cand(string Title, string Artists, string Album, string? Cover, string? Link, bool IsAlbum = false);
 
-    readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(3) };
+    readonly HttpClient _http = new(new DirectFallbackHandler(true)) { Timeout = TimeSpan.FromSeconds(3) };
     readonly Dictionary<string, LookupResult> _cache = new();
 
     // MusicBrainz требует осмысленный User-Agent; редиректы Cover Art Archive читаем сами (нужна итоговая ссылка на картинку)
-    readonly HttpClient _mb = new(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(4) };
+    readonly HttpClient _mb = new(new DirectFallbackHandler(false)) { Timeout = TimeSpan.FromSeconds(4) };
 
     public CoverLookup()
     {
@@ -43,6 +43,11 @@ public sealed class CoverLookup
         album = Regex.Replace(album, @"\s*[|｜].*$", "").Trim();
         // У клипа "альбом" равен названию клипа и ничего не говорит о релизе — не требуем его совпадения.
         if (Norm(album).Length > 0 && Norm(album) == Norm(title)) album = "";
+        // В запрос — название без скобок и «feat.»: длинное «Track (feat. A, B & C)» поиск часто вообще не находит.
+        // Оценка совпадения (Score) и так не учитывает скобки, так что точность не страдает.
+        var qTitle = Regex.Replace(title, @"\s*[\(\[].*?[\)\]]", " ");
+        qTitle = Regex.Replace(qTitle, @"\s+[-–—]\s+(feat|ft)\b.*$", "", RegexOptions.IgnoreCase).Trim();
+        if (qTitle.Length == 0) qTitle = title;
         string key = $"{artist}|{title}|{album}".ToLowerInvariant();
         lock (_cache)
         {
@@ -66,10 +71,10 @@ public sealed class CoverLookup
         // Каждый источник спрашиваем двумя запросами (с альбомом и без) и склеиваем результаты.
         async Task<List<Cand>> Both(Func<string, Task<List<Cand>>> run, Func<string, Task<List<Cand>>> runAlbum)
         {
-            var tasks = new List<Task<List<Cand>>> { run($"{artist} {title}") };
+            var tasks = new List<Task<List<Cand>>> { run($"{artist} {qTitle}") };
             if (!string.IsNullOrWhiteSpace(album))
             {
-                tasks.Add(run($"{artist} {title} {album}"));
+                tasks.Add(run($"{artist} {qTitle} {album}"));
                 tasks.Add(runAlbum($"{artist} {album}"));   // альбом ищем отдельно: самого трека в базе может не быть
             }
             var parts = await Task.WhenAll(tasks);
@@ -121,7 +126,7 @@ public sealed class CoverLookup
             {
                 using var mbCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 mbCts.CancelAfter(TimeSpan.FromSeconds(6));
-                var list = await MusicBrainz(artist, title, mbCts.Token);
+                var list = await MusicBrainz(artist, qTitle, mbCts.Token);
                 var top = list.Where(c => c.Cover != null)
                               .Select(c => (c, score: Score(artist, title, album, c)))
                               .Where(x => x.score >= 0)
@@ -376,5 +381,28 @@ public sealed class CoverLookup
         else if (qal == ral || qal.Contains(ral) || ral.Contains(qal)) score += 4;
         else return -1;
         return score;
+    }
+}
+
+/// <summary>Запросы идут через системный прокси Windows. Если он прописан, но сам прокси-клиент (VPN и т.п.) выключен,
+/// соединение отвергается и поиск обложек не работал вовсе — тогда повторяем запрос напрямую.</summary>
+sealed class DirectFallbackHandler : DelegatingHandler
+{
+    readonly HttpMessageInvoker _direct;
+
+    public DirectFallbackHandler(bool autoRedirect) : base(new HttpClientHandler { AllowAutoRedirect = autoRedirect })
+    {
+        _direct = new HttpMessageInvoker(new HttpClientHandler { AllowAutoRedirect = autoRedirect, UseProxy = false });
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        try { return await base.SendAsync(request, ct); }
+        catch (HttpRequestException ex) when (ex.InnerException is System.Net.Sockets.SocketException && request.Content == null)
+        {
+            var copy = new HttpRequestMessage(request.Method, request.RequestUri);
+            foreach (var h in request.Headers) copy.Headers.TryAddWithoutValidation(h.Key, h.Value);
+            return await _direct.SendAsync(copy, ct);
+        }
     }
 }

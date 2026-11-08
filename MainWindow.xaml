@@ -73,7 +73,10 @@
         </Border>
 
         <!-- ===== Страницы ===== -->
-        <Grid Grid.Row="2">
+        <!-- Если баннер обновления сдвинул страницу вниз — содержимое прокручивается, а не обрезается.
+             Полоса прокрутки уходит в боковое поле окна, поэтому раскладка страниц не меняется. -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,-22,0" Focusable="False">
+        <Grid Margin="0,0,22,0">
 
             <!-- 0: Обзор -->
             <Grid x:Name="Page0">
@@ -334,5 +337,6 @@
                 </StackPanel>
             </Grid>
         </Grid>
+        </ScrollViewer>
     </Grid>
 </Window>
