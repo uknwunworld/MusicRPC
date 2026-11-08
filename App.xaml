@@ -69,6 +69,7 @@
             <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
             <Setter Property="FontSize" Value="13.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
@@ -92,6 +93,7 @@
         <Style x:Key="Switch" TargetType="CheckBox">
             <Setter Property="Foreground" Value="{DynamicResource Text}"/>
             <Setter Property="Margin" Value="0,0,0,16"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
@@ -121,6 +123,7 @@
         </Style>
 
         <Style x:Key="Btn" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Foreground" Value="{DynamicResource Text}"/>
             <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="Template">

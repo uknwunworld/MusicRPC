@@ -207,11 +207,17 @@ public sealed class PresenceController : IDisposable
         }
         if (useCover)
         {
-            act["assets"] = new JsonObject
+            var assets = new JsonObject
             {
                 ["large_image"] = n.CoverUrl,
                 ["large_text"] = Fit(SourceNames.CoverHint(n.Source, n.Album)),
             };
+            if (SourceNames.BadgeUrl(n.Source) is { } badge)
+            {
+                assets["small_image"] = badge;
+                assets["small_text"] = Fit(SourceNames.Of(n.Source));
+            }
+            act["assets"] = assets;
         }
         if (useBtn)
         {

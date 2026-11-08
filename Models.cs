@@ -26,6 +26,19 @@ public static class SourceNames
         _ => "Открыть трек",
     };
 
+    /// <summary>Значок сервиса на обложке (лежит в репозитории, Discord подтягивает его по ссылке).</summary>
+    public static string? BadgeUrl(SourceKind k)
+    {
+        const string root = "https://raw.githubusercontent.com/uknwunworld/MusicRPC/main/docs/badges/";
+        return k switch
+        {
+            SourceKind.Spotify => root + "spotify.png",
+            SourceKind.Yandex => root + "yandex.png",
+            SourceKind.SoundCloud => root + "soundcloud.png",
+            _ => null,
+        };
+    }
+
     /// <summary>Подсказка при наведении на обложку: альбом и сервис.</summary>
     public static string CoverHint(SourceKind k, string album)
     {
