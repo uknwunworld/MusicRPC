@@ -48,9 +48,9 @@ public static class SourceNames
         const string root = "https://raw.githubusercontent.com/uknwunworld/MusicRPC/main/docs/badges/";
         return k switch
         {
-            SourceKind.Spotify => root + "spotify.png",
-            SourceKind.Yandex => root + "yandex.png",
-            SourceKind.SoundCloud => root + "soundcloud.png",
+            SourceKind.Spotify => root + "spotify-v2.png",
+            SourceKind.Yandex => root + "yandex-v2.png",
+            SourceKind.SoundCloud => root + "soundcloud-v2.png",
             _ => null,
         };
     }
