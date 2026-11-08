@@ -26,6 +26,9 @@ public static class SourceNames
         _ => "Открыть трек",
     };
 
+    /// <summary>Логотип приложения — запасная картинка для плееров без значка сервиса.</summary>
+    public const string AppIconUrl = "https://raw.githubusercontent.com/uknwunworld/MusicRPC/main/app-icon.png";
+
     /// <summary>Значок сервиса на обложке (лежит в репозитории, Discord подтягивает его по ссылке).</summary>
     public static string? BadgeUrl(SourceKind k)
     {

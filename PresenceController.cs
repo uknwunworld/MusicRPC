@@ -219,6 +219,15 @@ public sealed class PresenceController : IDisposable
             }
             act["assets"] = assets;
         }
+        else
+        {
+            // обложка не найдена: без картинки Discord рисует серую заглушку «?», поэтому показываем логотип сервиса
+            act["assets"] = new JsonObject
+            {
+                ["large_image"] = SourceNames.BadgeUrl(n.Source) ?? SourceNames.AppIconUrl,
+                ["large_text"] = Fit(SourceNames.CoverHint(n.Source, n.Album)),
+            };
+        }
         if (useBtn)
         {
             act["buttons"] = new JsonArray(new JsonObject { ["label"] = SourceNames.ButtonLabel(n.Source), ["url"] = n.TrackUrl });
