@@ -36,7 +36,9 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 
 **Так выглядит статус в Discord:**
 
-<p align="center"><img src="docs/screen-discord-badge.png" width="460" alt="Статус MusicRPC в профиле Discord"></p>
+| Spotify | Яндекс Музыка |
+|---|---|
+| <img src="docs/screen-discord-spotify.png" alt="Статус MusicRPC: Spotify"> | <img src="docs/screen-discord-yandex.png" alt="Статус MusicRPC: Яндекс Музыка"> |
 
 **Окно программы:**
 
