@@ -14,7 +14,7 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 
 [**⬇ Скачать установщик**](https://github.com/uknwunworld/MusicRPC/releases/latest)
 
-<img src="docs/screen-overview.png" width="760" alt="MusicRPC — тёмная тема">
+<img src="docs/screen-main-dark.png" width="760" alt="MusicRPC — тёмная тема">
 
 </div>
 
@@ -36,13 +36,13 @@ Spotify · Яндекс Музыка · SoundCloud — с обложкой, пр
 
 **Так выглядит статус в Discord:**
 
-<p align="center"><img src="docs/screen-discord.png" width="460" alt="Статус MusicRPC в профиле Discord"></p>
+<p align="center"><img src="docs/screen-discord-badge.png" width="460" alt="Статус MusicRPC в профиле Discord"></p>
 
 **Окно программы:**
 
-| Активность (светлая тема) | Настройки |
+| Обзор (светлая тема) | Настройки |
 |---|---|
-| <img src="docs/screen-activity-light.png" alt="Вкладка «Активность», светлая тема"> | <img src="docs/screen-settings.png" alt="Вкладка «Настройки»"> |
+| <img src="docs/screen-main-light.png" alt="Вкладка «Обзор», светлая тема"> | <img src="docs/screen-settings-light.png" alt="Вкладка «Настройки»"> |
 
 ## 📦 Установка
 
