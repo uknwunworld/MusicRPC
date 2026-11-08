@@ -125,10 +125,17 @@ public sealed class CoverLookup
             try
             {
                 using var mbCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                mbCts.CancelAfter(TimeSpan.FromSeconds(6));
-                var list = await MusicBrainz(artist, qTitle, mbCts.Token);
+                mbCts.CancelAfter(TimeSpan.FromSeconds(9));
+                var list = await MusicBrainz(artist, qTitle, album, mbCts.Token);
                 var top = list.Where(c => c.Cover != null)
                               .Select(c => (c, score: Score(artist, title, album, c)))
+                              .Where(x => x.score >= 0)
+                              .OrderByDescending(x => x.score)
+                              .FirstOrDefault();
+                // Нужного альбома с обложкой нет — лучше обложка того же трека с другого релиза (сингл, сборник), чем никакой.
+                if (top.c == null)
+                    top = list.Where(c => c.Cover != null)
+                              .Select(c => (c, score: Score(artist, title, "", c)))
                               .Where(x => x.score >= 0)
                               .OrderByDescending(x => x.score)
                               .FirstOrDefault();
@@ -153,7 +160,7 @@ public sealed class CoverLookup
     }
 
     // ---------- MusicBrainz + Cover Art Archive ----------
-    async Task<List<Cand>> MusicBrainz(string artist, string title, CancellationToken ct)
+    async Task<List<Cand>> MusicBrainz(string artist, string title, string album, CancellationToken ct)
     {
         var res = new List<Cand>();
         static string Q(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
@@ -162,10 +169,12 @@ public sealed class CoverLookup
 
         var url = "https://musicbrainz.org/ws/2/recording/?fmt=json&limit=5&query=" +
                   Uri.EscapeDataString($"recording:\"{Q(title)}\" AND artist:\"{Q(first)}\"");
-        using var doc = JsonDocument.Parse(await _mb.GetStringAsync(url, ct));
+        using var doc = JsonDocument.Parse(await MbGet(url, ct));
         if (!doc.RootElement.TryGetProperty("recordings", out var recs)) return res;
 
-        int lookups = 0;   // обращений к Cover Art Archive не больше четырёх
+        // Все релизы подходящих записей; те, что называются как альбом из плеера, проверяем первыми.
+        var qal = Norm(album);
+        var rels = new List<(string rTitle, string artists, string relTitle, string id, bool albumMatch)>();
         foreach (var r in recs.EnumerateArray())
         {
             var rTitle = r.TryGetProperty("title", out var rt) ? rt.GetString() ?? "" : "";
@@ -173,18 +182,43 @@ public sealed class CoverLookup
             var artists = r.TryGetProperty("artist-credit", out var ac)
                 ? string.Join(", ", ac.EnumerateArray().Select(a => a.TryGetProperty("name", out var n) ? n.GetString() ?? "" : ""))
                 : "";
-            if (!r.TryGetProperty("releases", out var rels)) continue;
-            foreach (var rel in rels.EnumerateArray().Take(3))
+            if (!r.TryGetProperty("releases", out var rl)) continue;
+            foreach (var rel in rl.EnumerateArray().Take(12))
             {
-                if (lookups >= 4) return res;
                 if (!rel.TryGetProperty("id", out var idp)) continue;
-                lookups++;
                 var relTitle = rel.TryGetProperty("title", out var rlt) ? rlt.GetString() ?? "" : "";
-                var cover = await CoverArt(idp.GetString() ?? "", ct);
-                if (cover != null) res.Add(new Cand(rTitle, artists, relTitle, cover, null));
+                var ral = Norm(relTitle);
+                rels.Add((rTitle, artists, relTitle, idp.GetString() ?? "", qal.Length > 0 && (qal == ral || qal.Contains(ral) || ral.Contains(qal))));
             }
         }
+
+        int lookups = 0;   // обращений к Cover Art Archive не больше шести
+        foreach (var x in rels.OrderByDescending(x => x.albumMatch))
+        {
+            if (lookups >= 6) break;
+            lookups++;
+            var cover = await CoverArt(x.id, ct);
+            if (cover == null) continue;
+            res.Add(new Cand(x.rTitle, x.artists, x.relTitle, cover, null));
+            if (x.albumMatch) break;   // нужный альбом найден — дальше не ищем
+        }
         return res;
+    }
+
+    /// <summary>MusicBrainz при перегрузке отвечает 503/429 — один раз повторяем через паузу.</summary>
+    async Task<string> MbGet(string url, CancellationToken ct)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            using var resp = await _mb.GetAsync(url, ct);
+            if (attempt == 0 && ((int)resp.StatusCode == 503 || (int)resp.StatusCode == 429))
+            {
+                await Task.Delay(1500, ct);
+                continue;
+            }
+            resp.EnsureSuccessStatusCode();
+            return await resp.Content.ReadAsStringAsync(ct);
+        }
     }
 
     /// <summary>Cover Art Archive отвечает редиректом на картинку, если обложка у релиза есть (иначе 404).</summary>
